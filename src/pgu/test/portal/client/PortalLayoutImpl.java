@@ -2,8 +2,6 @@ package pgu.test.portal.client;
 
 import com.github.gwtbootstrap.client.ui.NavLink;
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.core.client.Scheduler;
-import com.google.gwt.core.client.Scheduler.RepeatingCommand;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
@@ -40,14 +38,14 @@ public class PortalLayoutImpl extends Composite {
         employeesFrame.setUrl("http://localhost:8080/employees/Pgu_test_widget_employees.html");
         careersFrame.setUrl("http://localhost:8080/careers/Pgu_test_widget_careers.html");
 
-        Scheduler.get().scheduleFixedPeriod(new RepeatingCommand() {
-
-            @Override
-            public boolean execute() {
-                return updateMenu();
-            }
-
-        }, 300);
+        //        Scheduler.get().scheduleFixedPeriod(new RepeatingCommand() {
+        //
+        //            @Override
+        //            public boolean execute() {
+        //                return updateMenu();
+        //            }
+        //
+        //        }, 300);
 
     }
 

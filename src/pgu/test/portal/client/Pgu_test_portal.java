@@ -29,10 +29,23 @@ public class Pgu_test_portal implements EntryPoint {
 			$wnd.console.log(e);
 
 			if (e.origin === 'http://localhost:8080') {
-				var msg = JSON.parse(e.data);
+				var
+				    msg = JSON.parse(e.data)
+				  , type = msg.type
+				;
 
 				if ([ 'employees', 'careers' ].indexOf(msg.id) > -1) {
-					view.@pgu.test.portal.client.PortalLayoutImpl::updateEntry(Ljava/lang/String;)(msg.count);
+
+				    if (type === 'response') {
+    					view.@pgu.test.portal.client.PortalLayoutImpl::updateEntry(Ljava/lang/String;)(msg.count);
+
+				    } else if (type === 'notif') {
+    					view.@pgu.test.portal.client.PortalLayoutImpl::updateEntry(Ljava/lang/String;)(msg.count);
+
+
+				    } else {
+    					$wnd.console.log('Unsupported type ' + type);
+				    }
 
 				} else {
 					$wnd.console.log('Unsupported widget with id ' + msg.id);
