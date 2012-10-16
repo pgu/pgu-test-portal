@@ -1,0 +1,6 @@
+<Context 
+  docBase="/home/pascal/bin/workspace_juno/pgu-test-widget-careers/war" 
+  path="/careers" 
+  cachingAllowed="false"
+  override="false" > 
+</Context>

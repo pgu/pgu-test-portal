@@ -1,0 +1,6 @@
+<Context 
+  docBase="/home/pascal/bin/workspace_juno/pgu-test-portal/war" 
+  path="/portal" 
+  cachingAllowed="false"
+  override="false" > 
+</Context>
