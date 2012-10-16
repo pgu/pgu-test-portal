@@ -1,0 +1,10 @@
+.classpath
+.project
+.settings/
+war/pgu_test_portal/
+war/WEB-INF/deploy/
+war/WEB-INF/lib/
+war/WEB-INF/classes/
+war/WEB-INF/appengine-generated/
+gwt-unitCache/
+test-classes/
