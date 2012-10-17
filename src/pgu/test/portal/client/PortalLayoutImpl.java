@@ -1,12 +1,19 @@
 package pgu.test.portal.client;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+
 import com.github.gwtbootstrap.client.ui.NavLink;
+import com.github.gwtbootstrap.client.ui.base.IconAnchor;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
-import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.Frame;
+import com.google.gwt.user.client.ui.HTMLPanel;
+import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.Widget;
 
 public class PortalLayoutImpl extends Composite {
@@ -17,90 +24,110 @@ public class PortalLayoutImpl extends Composite {
     }
 
     @UiField
-    NavLink goToEmployees, goToCareers;
+    HTMLPanel                                   menu, hiddenframes;
     @UiField
-    com.google.gwt.user.client.ui.Frame employeesFrame, careersFrame;
+    SimplePanel                                 applicationArea;
 
     private com.google.gwt.user.client.ui.Frame currentFrame;
 
-    public PortalLayoutImpl() {
+    private final Pgu_test_portal               portal;
+
+    public PortalLayoutImpl(final Pgu_test_portal portal) {
         initWidget(uiBinder.createAndBindUi(this));
 
-        employeesFrame.setVisible(true);
-        careersFrame.setVisible(false);
-        currentFrame = employeesFrame;
+        this.portal = portal;
+        hiddenframes.setVisible(false);
 
-        goToEmployees.setActive(true);
-
-        employeesFrame.getElement().setId("frame_employees");
-        careersFrame.getElement().setId("frame_careers");
-
-        employeesFrame.setUrl("http://localhost:8080/employees/Pgu_test_widget_employees.html");
-        careersFrame.setUrl("http://localhost:8080/careers/Pgu_test_widget_careers.html");
-
-        //        Scheduler.get().scheduleFixedPeriod(new RepeatingCommand() {
+        // Scheduler.get().scheduleFixedPeriod(new RepeatingCommand() {
         //
-        //            @Override
-        //            public boolean execute() {
-        //                return updateMenu();
-        //            }
+        // @Override
+        // public boolean execute() {
+        // return updateMenu();
+        // }
         //
-        //        }, 300);
+        // }, 300);
 
     }
 
-    public void updateEntry(final String count) {
+    // private final HashMap<String, String> frame_id2token = new HashMap<String, String>();
 
-        NavLink currentLink = null;
-        String text = "";
+    public void updateHistory(final String frame_id, final String token) {
+        // token to frame
+        // frame_id2token.put(frame_id, token);
 
-        if (employeesFrame.equals(currentFrame)) {
-            currentLink = goToEmployees;
-            text = "Employees";
+        portal.newTokenHistory(frame_id, token);
+    }
 
-        } else if (careersFrame.equals(currentFrame)) {
-            currentLink = goToCareers;
-            text = "Careers";
+    public void updateEntry(final String frame_id, final String titleEntry) {
+        final NavLink link = frame_id2link.get(frame_id);
+        link.setText(titleEntry);
+    }
 
-        } else {
-            throw new IllegalArgumentException("current frame: " + currentFrame);
+    // private native void updateMenuFromCurrentFrame(String current_frame_id, String current_frame_url) /*-{
+    //
+    // $wnd.console.log(current_frame_id);
+    // $wnd.console.log(current_frame_url);
+    //
+    // var frame = $doc.getElementById(current_frame_id);
+    // frame.contentWindow.postMessage('{"action":"update_menu"}',
+    // 'http://localhost:8080');
+    // }-*/;
+
+    private final LinkedHashMap<String, NavLink> frame_id2link     = new LinkedHashMap<String, NavLink>();
+    private final HashMap<NavLink, String>       link2frame_id     = new HashMap<NavLink, String>();
+    private final HashMap<String, Frame>         frame_id2frame    = new HashMap<String, Frame>();
+
+    ClickHandler                                 clickFrameHandler = new ClickHandler() {
+
+        @Override
+        public void onClick(final ClickEvent event) {
+            final NavLink link = (NavLink) ((IconAnchor) event
+                    .getSource()).getParent();
+            final String frame_id = link2frame_id
+                    .get(link);
+
+            if (!frame_id.equals(portal.getCurrentFrameId())) {
+                displayFrame(frame_id);
+            }
+
+            portal.newTokenHistory(frame_id, "");
+        }
+    };
+
+    public void addFrame(final Frame frame) {
+        final String frame_id = frame.getElement().getId();
+
+        final NavLink link = new NavLink();
+        link.addClickHandler(clickFrameHandler);
+
+        hiddenframes.add(frame);
+
+        frame_id2link.put(frame_id, link);
+        link2frame_id.put(link, frame_id);
+        frame_id2frame.put(frame_id, frame);
+
+        menu.add(link);
+    }
+
+    public void displayFrame(final String frame_id) {
+        portal.updateCurrentFrameId(frame_id);
+
+        if (applicationArea.getWidget() == null) {
+            final Frame frame = frame_id2frame.get(frame_id);
+            applicationArea.setWidget(frame);
+            return;
         }
 
-        if (null == count || "".equals(count.trim())) {
-            currentLink.setText(text);
-        } else {
-
-            currentLink.setText(text + " (" + count + ")");
+        final String curr_frame_id = applicationArea.getWidget().getElement().getId();
+        if (frame_id.equals(curr_frame_id)) {
+            return;
         }
 
-    }
+        final Frame curr_frame = frame_id2frame.get(curr_frame_id);
+        hiddenframes.add(curr_frame);
 
-    private boolean updateMenu() {
-        updateMenuFromCurrentFrame(currentFrame.getElement().getId(), currentFrame.getUrl());
-        return true;
-    }
-
-    private native void updateMenuFromCurrentFrame(String current_frame_id, String current_frame_url) /*-{
-
-        $wnd.console.log(current_frame_id);
-        $wnd.console.log(current_frame_url);
-
-        var frame = $doc.getElementById(current_frame_id);
-        frame.contentWindow.postMessage('{"action":"update_menu"}', 'http://localhost:8080');
-    }-*/;
-
-    @UiHandler("goToEmployees")
-    public void clickOnEmployees(final ClickEvent e) {
-        employeesFrame.setVisible(true);
-        careersFrame.setVisible(false);
-        currentFrame = employeesFrame;
-    }
-
-    @UiHandler("goToCareers")
-    public void clickOnCarreers(final ClickEvent e) {
-        employeesFrame.setVisible(false);
-        careersFrame.setVisible(true);
-        currentFrame = careersFrame;
+        final Frame frame = frame_id2frame.get(frame_id);
+        applicationArea.setWidget(frame);
     }
 
 }
