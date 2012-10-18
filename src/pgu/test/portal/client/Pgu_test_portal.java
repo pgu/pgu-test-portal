@@ -9,6 +9,7 @@ import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.user.client.History;
+import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Frame;
 import com.google.gwt.user.client.ui.RootPanel;
 
@@ -16,15 +17,15 @@ public class Pgu_test_portal implements EntryPoint {
 
     private final GreetingServiceAsync greetingService = GWT.create(GreetingService.class);
 
-    public static final LinkedHashMap<String, String> id2url = new LinkedHashMap<String, String>();
+    //    public static final LinkedHashMap<String, String> id2url = new LinkedHashMap<String, String>();
 
-    private static final String employees_id = "employees";
-    private static final String careers_id = "careers";
+    //    private static final String employees_id = "employees";
+    //    private static final String careers_id = "careers";
 
-    static {
-        id2url.put(careers_id, "http://localhost:8080/careers/Pgu_test_widget_careers.html");
-        id2url.put(employees_id, "http://localhost:8080/employees/Pgu_test_widget_employees.html");
-    }
+    //    static {
+    //        id2url.put(careers_id, "http://localhost:8080/careers/Pgu_test_widget_careers.html");
+    //        id2url.put(employees_id, "http://localhost:8080/employees/Pgu_test_widget_employees.html");
+    //    }
 
     private native void log(String msg) /*-{
         $wnd.console.log("portal: " + msg);
@@ -33,52 +34,77 @@ public class Pgu_test_portal implements EntryPoint {
 
     private String current_frame_id = "";
 
+    private final LinkedHashMap<String, String> widgetId2url = new LinkedHashMap<String, String>();
+
     @Override
     public void onModuleLoad() {
 
         final PortalLayoutImpl portalLayout = new PortalLayoutImpl(this);
         RootPanel.get().add(portalLayout);
 
-        for (final Entry<String, String> e : id2url.entrySet()) {
-            final String id = e.getKey();
-            final String url = e.getValue();
+        greetingService.getWidgets(new AsyncCallback<LinkedHashMap<String, String>>() {
 
-            final Frame frame = new Frame(url);
-            frame.getElement().setId(id);
-            frame.setWidth("100%");
-            frame.setHeight("800px");
+            @Override
+            public void onFailure(final Throwable caught) {
+                throw new RuntimeException(caught);
+            }
 
-            portalLayout.addFrame(frame);
-        }
+            @Override
+            public void onSuccess(final LinkedHashMap<String, String> result) {
+                widgetId2url.putAll(result);
 
-        portalLayout.displayFrame(employees_id);
+                for (final Entry<String, String> e : widgetId2url.entrySet()) {
+                    final String id = e.getKey();
+                    final String url = e.getValue();
+                    GWT.log(url);
+
+                    final Frame frame = new Frame(url);
+                    frame.getElement().setId(id);
+                    frame.setWidth("100%");
+                    frame.setHeight("800px");
+
+                    portalLayout.addFrame(frame);
+                }
+
+                if (!widgetId2url.isEmpty()) {
+                    portalLayout.displayFrame(widgetId2url.keySet().iterator().next());
+                }
+            }
+        });
 
         History.addValueChangeHandler(new ValueChangeHandler<String>() {
 
             @Override
             public void onValueChange(final ValueChangeEvent<String> event) {
                 final String token = event.getValue();
+
                 log("history: " + token);
 
-                if (token.startsWith(employees_id)) {
+                String tok = token;
 
-                    if (!employees_id.equals(current_frame_id)) {
-                        portalLayout.displayFrame(employees_id);
+                if (token.contains("#")) {
+                    final String[] parts = token.split("#");
+                    tok = parts[0];
+                }
+
+                if (widgetId2url.containsKey(tok)) {
+
+                    final String widgetId = tok;
+                    if (widgetId.equals(current_frame_id)) {
+                        portalLayout.displayFrame(widgetId);
                     }
-                    sendTokenToFrame(employees_id, token);
-
-                } else if (token.startsWith(careers_id) //
-                        || "".equals(token) //
-                        || "#".equals(token) //
-                        ) {
-
-                    if (careers_id.equals(current_frame_id)) {
-                        portalLayout.displayFrame(careers_id);
-                    }
-                    sendTokenToFrame(careers_id, token);
+                    sendTokenToFrame(widgetId, token);
 
                 } else {
-                    throw new UnsupportedOperationException("Unknown token " + token);
+
+                    if (!widgetId2url.isEmpty()) {
+                        final String widgetId = widgetId2url.keySet().iterator().next();
+
+                        if (widgetId.equals(current_frame_id)) {
+                            portalLayout.displayFrame(widgetId);
+                        }
+                        sendTokenToFrame(widgetId, "");
+                    }
                 }
 
             }
