@@ -11,4 +11,6 @@ public interface GreetingServiceAsync {
     void greetServer(String input, AsyncCallback<String> callback) throws IllegalArgumentException;
 
     void getWidgets(AsyncCallback<LinkedHashMap<String, String>> asyncCallback);
+
+    void getWidgetMenu(String widgetUrl, AsyncCallback<String> asyncCallback);
 }

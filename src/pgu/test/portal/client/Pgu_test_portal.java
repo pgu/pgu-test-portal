@@ -63,7 +63,21 @@ public class Pgu_test_portal implements EntryPoint {
                     frame.setWidth("100%");
                     frame.setHeight("800px");
 
-                    portalLayout.addFrame(frame);
+                    greetingService.getWidgetMenu(url, new AsyncCallback<String>() {
+
+                        @Override
+                        public void onFailure(final Throwable caught) {
+                            throw new RuntimeException(caught);
+                        }
+
+                        @Override
+                        public void onSuccess(final String jsonMenu) {
+                            // TODO add menu entries to portalLayout
+                        }
+
+                    });
+
+                    //                    portalLayout.addFrame(frame);
                 }
 
                 if (!widgetId2url.isEmpty()) {
