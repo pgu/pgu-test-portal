@@ -13,7 +13,6 @@ import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.Frame;
 import com.google.gwt.user.client.ui.HTMLPanel;
-import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.Widget;
 
 public class PortalLayoutImpl extends Composite {
@@ -24,37 +23,19 @@ public class PortalLayoutImpl extends Composite {
     }
 
     @UiField
-    HTMLPanel                                   menu, hiddenframes;
+    HTMLPanel                     menu;
     @UiField
-    SimplePanel                                 applicationArea;
+    Frame                         frame;
 
-    private com.google.gwt.user.client.ui.Frame currentFrame;
-
-    private final Pgu_test_portal               portal;
+    private final Pgu_test_portal portal;
 
     public PortalLayoutImpl(final Pgu_test_portal portal) {
         initWidget(uiBinder.createAndBindUi(this));
 
         this.portal = portal;
-        hiddenframes.setVisible(false);
-
-        // Scheduler.get().scheduleFixedPeriod(new RepeatingCommand() {
-        //
-        // @Override
-        // public boolean execute() {
-        // return updateMenu();
-        // }
-        //
-        // }, 300);
-
     }
 
-    // private final HashMap<String, String> frame_id2token = new HashMap<String, String>();
-
     public void updateHistory(final String frame_id, final String token) {
-        // token to frame
-        // frame_id2token.put(frame_id, token);
-
         portal.newTokenHistory(frame_id, token);
     }
 
@@ -62,16 +43,6 @@ public class PortalLayoutImpl extends Composite {
         final NavLink link = frame_id2link.get(frame_id);
         link.setText(titleEntry);
     }
-
-    // private native void updateMenuFromCurrentFrame(String current_frame_id, String current_frame_url) /*-{
-    //
-    // $wnd.console.log(current_frame_id);
-    // $wnd.console.log(current_frame_url);
-    //
-    // var frame = $doc.getElementById(current_frame_id);
-    // frame.contentWindow.postMessage('{"action":"update_menu"}',
-    // 'http://localhost:8080');
-    // }-*/;
 
     private final LinkedHashMap<String, NavLink> frame_id2link     = new LinkedHashMap<String, NavLink>();
     private final HashMap<NavLink, String>       link2frame_id     = new HashMap<NavLink, String>();
@@ -86,8 +57,9 @@ public class PortalLayoutImpl extends Composite {
             final String frame_id = link2frame_id
                     .get(link);
 
-            if (!frame_id.equals(portal.getCurrentFrameId())) {
-                displayFrame(frame_id);
+            if (!frame_id.equals(portal
+                    .getCurrentFrameId())) {
+                //                displayFrame(frame_id);
             }
 
             portal.newTokenHistory(frame_id, "");
@@ -100,8 +72,6 @@ public class PortalLayoutImpl extends Composite {
         final NavLink link = new NavLink();
         link.addClickHandler(clickFrameHandler);
 
-        hiddenframes.add(frame);
-
         frame_id2link.put(frame_id, link);
         link2frame_id.put(link, frame_id);
         frame_id2frame.put(frame_id, frame);
@@ -109,25 +79,30 @@ public class PortalLayoutImpl extends Composite {
         menu.add(link);
     }
 
-    public void displayFrame(final String frame_id) {
-        portal.updateCurrentFrameId(frame_id);
+    //    public void displayFrame(final String frame_id) {
+    //        portal.updateCurrentFrameId(frame_id);
+    //
+    //        if (applicationArea.getWidget() == null) {
+    //            final Frame frame = frame_id2frame.get(frame_id);
+    //            applicationArea.setWidget(frame);
+    //            return;
+    //        }
+    //
+    //        final String curr_frame_id = applicationArea.getWidget().getElement().getId();
+    //        if (frame_id.equals(curr_frame_id)) {
+    //            return;
+    //        }
+    //
+    //        final Frame curr_frame = frame_id2frame.get(curr_frame_id);
+    //        hiddenframes.add(curr_frame);
+    //
+    //        final Frame frame = frame_id2frame.get(frame_id);
+    //        applicationArea.setWidget(frame);
+    //    }
 
-        if (applicationArea.getWidget() == null) {
-            final Frame frame = frame_id2frame.get(frame_id);
-            applicationArea.setWidget(frame);
-            return;
-        }
+    public void updateMenu(final String widgetId, final String code, final String title) {
+        // TODO Auto-generated method stub
 
-        final String curr_frame_id = applicationArea.getWidget().getElement().getId();
-        if (frame_id.equals(curr_frame_id)) {
-            return;
-        }
-
-        final Frame curr_frame = frame_id2frame.get(curr_frame_id);
-        hiddenframes.add(curr_frame);
-
-        final Frame frame = frame_id2frame.get(frame_id);
-        applicationArea.setWidget(frame);
     }
 
 }

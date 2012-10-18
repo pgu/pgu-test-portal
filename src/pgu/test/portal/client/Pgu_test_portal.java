@@ -9,8 +9,8 @@ import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.user.client.History;
+import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.google.gwt.user.client.ui.Frame;
 import com.google.gwt.user.client.ui.RootPanel;
 
 public class Pgu_test_portal implements EntryPoint {
@@ -36,55 +36,60 @@ public class Pgu_test_portal implements EntryPoint {
 
     private final LinkedHashMap<String, String> widgetId2url = new LinkedHashMap<String, String>();
 
+    private PortalLayoutImpl portalLayout;
+
     @Override
     public void onModuleLoad() {
 
-        final PortalLayoutImpl portalLayout = new PortalLayoutImpl(this);
+        portalLayout = new PortalLayoutImpl(this);
         RootPanel.get().add(portalLayout);
 
-        greetingService.getWidgets(new AsyncCallback<LinkedHashMap<String, String>>() {
+        final Timer timer = new Timer() {
 
             @Override
-            public void onFailure(final Throwable caught) {
-                throw new RuntimeException(caught);
-            }
+            public void run() {
 
-            @Override
-            public void onSuccess(final LinkedHashMap<String, String> result) {
-                widgetId2url.putAll(result);
+                greetingService.getWidgets(new AsyncCallback<LinkedHashMap<String, String>>() {
 
-                for (final Entry<String, String> e : widgetId2url.entrySet()) {
-                    final String id = e.getKey();
-                    final String url = e.getValue();
-                    GWT.log(url);
+                    @Override
+                    public void onFailure(final Throwable caught) {
+                        throw new RuntimeException(caught);
+                    }
 
-                    final Frame frame = new Frame(url);
-                    frame.getElement().setId(id);
-                    frame.setWidth("100%");
-                    frame.setHeight("800px");
+                    @Override
+                    public void onSuccess(final LinkedHashMap<String, String> result) {
+                        widgetId2url.putAll(result);
 
-                    greetingService.getWidgetMenu(url, new AsyncCallback<String>() {
+                        for (final Entry<String, String> e : widgetId2url.entrySet()) {
+                            final String widgetId = e.getKey();
+                            final String url = e.getValue();
 
-                        @Override
-                        public void onFailure(final Throwable caught) {
-                            throw new RuntimeException(caught);
+                            greetingService.getWidgetMenu(url, new AsyncCallback<String>() {
+
+                                @Override
+                                public void onFailure(final Throwable caught) {
+                                    throw new RuntimeException(caught);
+                                }
+
+                                @Override
+                                public void onSuccess(final String jsonMenu) {
+                                    updateWidgetMenu(widgetId, jsonMenu, Pgu_test_portal.this);
+
+                                    //                            if (!widgetId2url.isEmpty()) {
+                                    //                                portalLayout.displayFrame(widgetId2url.keySet().iterator().next());
+                                    //                            }
+                                }
+
+                            });
+
+                            //                    portalLayout.addFrame(frame);
                         }
 
-                        @Override
-                        public void onSuccess(final String jsonMenu) {
-                            // TODO add menu entries to portalLayout
-                        }
-
-                    });
-
-                    //                    portalLayout.addFrame(frame);
-                }
-
-                if (!widgetId2url.isEmpty()) {
-                    portalLayout.displayFrame(widgetId2url.keySet().iterator().next());
-                }
+                    }
+                });
             }
-        });
+        };
+        timer.schedule(2000);
 
         History.addValueChangeHandler(new ValueChangeHandler<String>() {
 
@@ -127,6 +132,30 @@ public class Pgu_test_portal implements EntryPoint {
 
         listenToMessage(functionToApplyOnFrameResponse(portalLayout));
 
+    }
+
+    private native void updateWidgetMenu(final String widgetId, final String jsonMenu, Pgu_test_portal activity) /*-{
+
+        var
+            menu = JSON.parse(jsonMenu)
+          , entries = menu.entries || []
+        ;
+
+        for (var i = 0, len = entries.length; i < len; i++) {
+
+            var
+                entry = entries[i]
+              , code = entry.code
+              , title = entry.title
+            ;
+
+            activity.@pgu.test.portal.client.Pgu_test_portal::updateMenuEntry(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)(widgetId, code, title);
+        }
+
+    }-*/;
+
+    public void updateMenuEntry(final String widgetId, final String code, final String title) {
+        portalLayout.updateMenu(widgetId, code, title);
     }
 
     public native void sendTokenToFrame(final String frame_id, String token) /*-{
