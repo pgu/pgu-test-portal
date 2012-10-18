@@ -1,17 +1,15 @@
 package pgu.test.portal.server;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.TreeMap;
 
 import pgu.test.portal.client.GreetingService;
 import pgu.test.portal.shared.FieldVerifier;
@@ -76,59 +74,28 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements Greetin
             inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(FILE_NAME);
         }
 
-        final Properties props = loadProperties(inputStream);
+        final BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
 
-        final TreeMap<Integer, String> order2key = new TreeMap<Integer, String>();
-        final HashMap<String, String> fullKey2key = new HashMap<String, String>();
+        final LinkedHashMap<String, String> id2url = new LinkedHashMap<String, String>();
 
-        for (final Entry<Object, Object> e : props.entrySet()) {
-            final String propKey = (String) e.getKey();
+        String line;
 
-            if (propKey.contains(".")) {
-                final String[] parts = propKey.split("\\.");
+        try {
+            while ((line = br.readLine()) != null)   {
 
-                Integer order = 9999;
-                try {
-                    order = Integer.valueOf(parts[0]);
-
-                }catch (final Exception ex) {
-                    // fail silently
+                if (line.trim().isEmpty()) {
+                    continue;
                 }
 
-                order2key.put(order, propKey);
-                fullKey2key.put(propKey, parts[1]);
-
-            } else {
-                order2key.put(9999, propKey);
-                fullKey2key.put(propKey, propKey);
+                final String[] parts = line.split(",");
+                id2url.put(parts[0], parts[1]);
             }
-        }
-
-        final LinkedHashMap<String, String> m = new LinkedHashMap<String, String>();
-
-        for (final Entry<Integer, String> e : order2key.entrySet()) {
-            final String propKey = e.getValue();
-
-            final String key = fullKey2key.get(propKey);
-            final String url = (String) props.get(propKey);
-            m.put(key, url);
-        }
-
-        return m;
-    }
-
-    private Properties loadProperties(final InputStream inputStream) {
-        try {
-            final Properties props = new Properties();
-            props.load(inputStream);
-            return props;
-
-        } catch (final FileNotFoundException e) {
-            throw new RuntimeException(e);
 
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
+
+        return id2url;
     }
 
     private boolean isBlank(final String filePath) {
