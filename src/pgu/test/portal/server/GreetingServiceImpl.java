@@ -88,6 +88,10 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements Greetin
                     continue;
                 }
 
+                if (line.startsWith("#")) {
+                    continue;
+                }
+
                 final String[] parts = line.split(",");
                 id2url.put(parts[0], parts[1]);
             }

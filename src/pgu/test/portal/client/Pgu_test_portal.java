@@ -9,28 +9,15 @@ import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.user.client.History;
-import com.google.gwt.user.client.Timer;
-import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.RootPanel;
 
 public class Pgu_test_portal implements EntryPoint {
 
     private final GreetingServiceAsync greetingService = GWT.create(GreetingService.class);
 
-    //    public static final LinkedHashMap<String, String> id2url = new LinkedHashMap<String, String>();
-
-    //    private static final String employees_id = "employees";
-    //    private static final String careers_id = "careers";
-
-    //    static {
-    //        id2url.put(careers_id, "http://localhost:8080/careers/Pgu_test_widget_careers.html");
-    //        id2url.put(employees_id, "http://localhost:8080/employees/Pgu_test_widget_employees.html");
-    //    }
-
     private native void log(String msg) /*-{
         $wnd.console.log("portal: " + msg);
     }-*/;
-
 
     private String current_frame_id = "";
 
@@ -44,52 +31,7 @@ public class Pgu_test_portal implements EntryPoint {
         portalLayout = new PortalLayoutImpl(this);
         RootPanel.get().add(portalLayout);
 
-        final Timer timer = new Timer() {
-
-            @Override
-            public void run() {
-
-                greetingService.getWidgets(new AsyncCallback<LinkedHashMap<String, String>>() {
-
-                    @Override
-                    public void onFailure(final Throwable caught) {
-                        throw new RuntimeException(caught);
-                    }
-
-                    @Override
-                    public void onSuccess(final LinkedHashMap<String, String> result) {
-                        widgetId2url.putAll(result);
-
-                        for (final Entry<String, String> e : widgetId2url.entrySet()) {
-                            final String widgetId = e.getKey();
-                            final String url = e.getValue();
-
-                            greetingService.getWidgetMenu(url, new AsyncCallback<String>() {
-
-                                @Override
-                                public void onFailure(final Throwable caught) {
-                                    throw new RuntimeException(caught);
-                                }
-
-                                @Override
-                                public void onSuccess(final String jsonMenu) {
-                                    updateWidgetMenu(widgetId, jsonMenu, Pgu_test_portal.this);
-
-                                    //                            if (!widgetId2url.isEmpty()) {
-                                    //                                portalLayout.displayFrame(widgetId2url.keySet().iterator().next());
-                                    //                            }
-                                }
-
-                            });
-
-                            //                    portalLayout.addFrame(frame);
-                        }
-
-                    }
-                });
-            }
-        };
-        timer.schedule(2000);
+        fetchWidgetsOnLoad();
 
         History.addValueChangeHandler(new ValueChangeHandler<String>() {
 
@@ -99,31 +41,37 @@ public class Pgu_test_portal implements EntryPoint {
 
                 log("history: " + token);
 
-                String tok = token;
+                if ("".equals(token)) {
+                    portalLayout.showHome();
+                    return;
+                }
+
+                String widgetId = "";
+                String place = "";
 
                 if (token.contains("#")) {
                     final String[] parts = token.split("#");
-                    tok = parts[0];
-                }
+                    widgetId = parts[0];
 
-                if (widgetId2url.containsKey(tok)) {
-
-                    final String widgetId = tok;
-                    if (widgetId.equals(current_frame_id)) {
-                        portalLayout.displayFrame(widgetId);
+                    if (parts.length > 1) {
+                        place = parts[1];
                     }
-                    sendTokenToFrame(widgetId, token);
 
                 } else {
+                    widgetId = token;
+                }
 
-                    if (!widgetId2url.isEmpty()) {
-                        final String widgetId = widgetId2url.keySet().iterator().next();
+                if (widgetId2url.containsKey(widgetId)) {
 
-                        if (widgetId.equals(current_frame_id)) {
-                            portalLayout.displayFrame(widgetId);
-                        }
-                        sendTokenToFrame(widgetId, "");
-                    }
+                    final String widgetUrl = widgetId2url.get(widgetId);
+
+                    portalLayout.loadFrame(widgetUrl, place);
+
+                    //                    if (widgetId.equals(current_frame_id)) {
+                    //                    }
+
+                } else {
+                    portalLayout.showHome();
                 }
 
             }
@@ -134,66 +82,97 @@ public class Pgu_test_portal implements EntryPoint {
 
     }
 
-    private native void updateWidgetMenu(final String widgetId, final String jsonMenu, Pgu_test_portal activity) /*-{
+    private void fetchWidgetsOnLoad() {
+        greetingService.getWidgets(new AsyncCallbackApp<LinkedHashMap<String, String>>() {
+
+            @Override
+            public void onSuccess(final LinkedHashMap<String, String> result) {
+
+                widgetId2url.putAll(result);
+
+                for (final Entry<String, String> e : result.entrySet()) {
+                    final String widgetId = e.getKey();
+                    final String widgetUrl = e.getValue();
+
+                    addEntryMenu(widgetId, widgetUrl);
+                }
+
+            }
+
+        });
+    }
+
+    private void addEntryMenu(final String widgetId, final String widgetUrl) {
+
+        greetingService.getWidgetMenu(widgetUrl, new AsyncCallbackApp<String>() {
+
+            @Override
+            public void onSuccess(final String jsonMenu) {
+                translateJsonMenuAndSendToView(widgetId, widgetUrl, jsonMenu, portalLayout);
+            }
+
+        });
+    }
+
+    private native void translateJsonMenuAndSendToView(final String widgetId, String widgetUrl, final String jsonMenu, PortalLayoutImpl view) /*-{
+
+        $wnd.console.log(jsonMenu);
 
         var
             menu = JSON.parse(jsonMenu)
           , entries = menu.entries || []
         ;
 
+        $wnd.console.log(entries);
+
         for (var i = 0, len = entries.length; i < len; i++) {
 
             var
                 entry = entries[i]
-              , code = entry.code
-              , title = entry.title
+              , code = entry.code || ''
+              , title = entry.title || ''
+              , place = entry.place || ''
             ;
 
-            activity.@pgu.test.portal.client.Pgu_test_portal::updateMenuEntry(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)(widgetId, code, title);
+            $wnd.console.log(title);
+
+            view.@pgu.test.portal.client.PortalLayoutImpl::addMenuEntry(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)( //
+            widgetId, widgetUrl, code, title, place);
         }
 
     }-*/;
 
-    public void updateMenuEntry(final String widgetId, final String code, final String title) {
-        portalLayout.updateMenu(widgetId, code, title);
-    }
+    public native void sendPlaceToFrame(String place) /*-{
 
-    public native void sendTokenToFrame(final String frame_id, String token) /*-{
-
-        var clean_token = token.substring(frame_id.length);
-        if (clean_token.length > 0) {
-            clean_token = clean_token.substring(1);
-        }
-
-        $wnd.console.log('>>> clean token ' + clean_token);
+        $wnd.console.log('>>> place ' + place);
 
         var notification = {};
         notification.type = 'history';
-        notification.token = clean_token;
+        notification.place = place;
 
         var msg_back = JSON.stringify(notification);
 
-        $wnd.console.log('notification for ' + frame_id);
         $wnd.console.log(notification);
 
-        var f = $doc.getElementById(frame_id);
+        var f = $doc.getElementById('portal_frame');
 
         f.contentWindow.postMessage(msg_back, 'http://localhost:8080');
         f.contentWindow.postMessage(msg_back, 'http://127.0.0.1:8888');
 
     }-*/;
 
-    public String getPortalToken(final String frame_id, final String token) {
-        if (null == token || "".equals(token.trim())) {
-            return frame_id;
+    public String getPortalToken(final String widgetId, final String place) {
+        if (null == place || "".equals(place.trim())) {
+            return widgetId;
         }
-        return frame_id + "#" + token;
+        return widgetId + "#" + place;
     };
 
-    public void newTokenHistory(final String frame_id, final String token) {
-        if (frame_id.equals(current_frame_id)) {
-            History.newItem(getPortalToken(frame_id, token));
-        }
+    public void newTokenHistory(final String widgetId, final String place) {
+        History.newItem(getPortalToken(widgetId, place));
+
+        //        if (frame_id.equals(current_frame_id)) {
+        //        }
     }
 
     private native void listenToMessage(JavaScriptObject fn_to_apply) /*-{
@@ -213,6 +192,7 @@ public class Pgu_test_portal implements EntryPoint {
 				    msg = JSON.parse(e.data)
 				  , type = msg.type
 				;
+			$wnd.console.log('AA');
 
 				if ([ 'employees', 'careers' ].indexOf(msg.id) > -1) {
 
@@ -226,7 +206,8 @@ public class Pgu_test_portal implements EntryPoint {
     					view.@pgu.test.portal.client.PortalLayoutImpl::updateHistory(Ljava/lang/String;Ljava/lang/String;)(msg.id, msg.token);
 
 				    } else if (type === 'title') {
-    					view.@pgu.test.portal.client.PortalLayoutImpl::updateEntry(Ljava/lang/String;Ljava/lang/String;)(msg.id, msg.title);
+				        $wnd.console.log('BB');
+    					view.@pgu.test.portal.client.PortalLayoutImpl::updateEntry(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)(msg.id, msg.code, msg.title);
 
 
 				    } else {
@@ -237,6 +218,8 @@ public class Pgu_test_portal implements EntryPoint {
 					$wnd.console.log('Unsupported widget with id ' + msg.id);
 
 				}
+			} else {
+			    $wnd.console.log('CC');
 			}
 
 		}
