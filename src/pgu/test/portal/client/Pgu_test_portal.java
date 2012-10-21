@@ -39,7 +39,7 @@ public class Pgu_test_portal implements EntryPoint {
             public void onValueChange(final ValueChangeEvent<String> event) {
                 final String token = event.getValue();
 
-                log("history: " + token);
+                log("history: [" + token + "]");
 
                 if ("".equals(token)) {
                     portalLayout.showHome();
@@ -65,7 +65,7 @@ public class Pgu_test_portal implements EntryPoint {
 
                     final String widgetUrl = widgetId2url.get(widgetId);
 
-                    portalLayout.loadFrame(widgetUrl, place);
+                    portalLayout.loadFrame(widgetId, widgetUrl, place);
 
                     //                    if (widgetId.equals(current_frame_id)) {
                     //                    }
@@ -116,14 +116,10 @@ public class Pgu_test_portal implements EntryPoint {
 
     private native void translateJsonMenuAndSendToView(final String widgetId, String widgetUrl, final String jsonMenu, PortalLayoutImpl view) /*-{
 
-        $wnd.console.log(jsonMenu);
-
         var
             menu = JSON.parse(jsonMenu)
           , entries = menu.entries || []
         ;
-
-        $wnd.console.log(entries);
 
         for (var i = 0, len = entries.length; i < len; i++) {
 
@@ -134,8 +130,6 @@ public class Pgu_test_portal implements EntryPoint {
               , place = entry.place || ''
             ;
 
-            $wnd.console.log(title);
-
             view.@pgu.test.portal.client.PortalLayoutImpl::addMenuEntry(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)( //
             widgetId, widgetUrl, code, title, place);
         }
@@ -144,15 +138,13 @@ public class Pgu_test_portal implements EntryPoint {
 
     public native void sendPlaceToFrame(String place) /*-{
 
-        $wnd.console.log('>>> place ' + place);
+        $wnd.console.log('send place [' + place + ']');
 
         var notification = {};
         notification.type = 'history';
         notification.place = place;
 
         var msg_back = JSON.stringify(notification);
-
-        $wnd.console.log(notification);
 
         var f = $doc.getElementById('portal_frame');
 
@@ -183,8 +175,7 @@ public class Pgu_test_portal implements EntryPoint {
 
 		return function receiver(e) {
 
-			$wnd.console.log('portal receiver');
-			$wnd.console.log(e);
+			$wnd.console.log('receiving: portal: ' + e.data);
 
 			if (e.origin === 'http://localhost:8080' //
 			        || e.origin === 'http://127.0.0.1:8888' ) {
@@ -192,7 +183,6 @@ public class Pgu_test_portal implements EntryPoint {
 				    msg = JSON.parse(e.data)
 				  , type = msg.type
 				;
-			$wnd.console.log('AA');
 
 				if ([ 'employees', 'careers' ].indexOf(msg.id) > -1) {
 
@@ -206,9 +196,13 @@ public class Pgu_test_portal implements EntryPoint {
     					view.@pgu.test.portal.client.PortalLayoutImpl::updateHistory(Ljava/lang/String;Ljava/lang/String;)(msg.id, msg.token);
 
 				    } else if (type === 'title') {
-				        $wnd.console.log('BB');
     					view.@pgu.test.portal.client.PortalLayoutImpl::updateEntry(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)(msg.id, msg.code, msg.title);
 
+				    } else if (type === 'notification') {
+    					view.@pgu.test.portal.client.PortalLayoutImpl::showNotification(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)(msg.id, msg.alert_type, msg.body);
+
+				    } else if (type === 'size') {
+    					view.@pgu.test.portal.client.PortalLayoutImpl::updateMenuBar(Z)(msg.is_full);
 
 				    } else {
     					$wnd.console.log('Unsupported type ' + type);
@@ -219,7 +213,7 @@ public class Pgu_test_portal implements EntryPoint {
 
 				}
 			} else {
-			    $wnd.console.log('CC');
+			    $wnd.console.log('Unsupported origin');
 			}
 
 		}
