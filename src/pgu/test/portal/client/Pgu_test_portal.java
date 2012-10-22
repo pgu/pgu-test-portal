@@ -226,6 +226,9 @@ public class Pgu_test_portal implements EntryPoint {
 				    } else if (type === 'notification') {
     					view.@pgu.test.portal.client.PortalLayoutImpl::showNotification(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)(msg.id, msg.alert_type, msg.body);
 
+				    } else if (type === 'chat') {
+    					view.@pgu.test.portal.client.PortalLayoutImpl::showChatBtn(Ljava/lang/String;)(msg.msg);
+
 				    } else if (type === 'size') {
     					view.@pgu.test.portal.client.PortalLayoutImpl::updateMenuBar(Z)(msg.is_full);
 
@@ -251,5 +254,22 @@ public class Pgu_test_portal implements EntryPoint {
     public String getCurrentFrameId() {
         return current_frame_id;
     }
+
+    public native void sendChatToFrame(final String text) /*-{
+
+        $wnd.console.log('send chat [' + text + ']');
+
+        var notification = {};
+        notification.type = 'chat';
+        notification.msg = text;
+
+        var msg_back = JSON.stringify(notification);
+
+        var f = $doc.getElementById('portal_frame');
+
+        f.contentWindow.postMessage(msg_back, 'http://localhost:8080');
+        f.contentWindow.postMessage(msg_back, 'http://127.0.0.1:8888');
+
+    }-*/;
 
 }

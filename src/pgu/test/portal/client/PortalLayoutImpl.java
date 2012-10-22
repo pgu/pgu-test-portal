@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 
 import com.github.gwtbootstrap.client.ui.AlertBlock;
+import com.github.gwtbootstrap.client.ui.Button;
 import com.github.gwtbootstrap.client.ui.Hero;
 import com.github.gwtbootstrap.client.ui.NavLink;
 import com.github.gwtbootstrap.client.ui.base.IconAnchor;
@@ -20,8 +21,10 @@ import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.DisclosurePanel;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.Frame;
+import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.Widget;
 
@@ -42,6 +45,10 @@ public class PortalLayoutImpl extends Composite {
     Hero                          firstPage;
     @UiField
     HTMLPanel alert, leftPanel, rightPanel;
+    @UiField
+    Button chat1Btn, chat2Btn, chatResetBtn;
+    @UiField
+    DisclosurePanel chatDisclosure;
 
     private final Pgu_test_portal portal;
 
@@ -50,6 +57,11 @@ public class PortalLayoutImpl extends Composite {
 
         this.portal = portal;
         frame.getElement().setId("portal_frame");
+
+        chatDisclosure.setHeader(new HTML("<b>Chat</b>"));
+        chat1Btn.setVisible(true);
+        chat2Btn.setVisible(false);
+        chatResetBtn.setVisible(false);
 
         //        showHome();
 
@@ -71,6 +83,34 @@ public class PortalLayoutImpl extends Composite {
             }
         });
 
+    }
+
+    @UiHandler("chat1Btn")
+    public void clickChat1(final ClickEvent e) {
+        portal.sendChatToFrame(chat1Btn.getText());
+    }
+
+    @UiHandler("chat2Btn")
+    public void clickChat2(final ClickEvent e) {
+        portal.sendChatToFrame(chat2Btn.getText());
+    }
+
+    @UiHandler("chatResetBtn")
+    public void clickChatReset(final ClickEvent e) {
+        chat1Btn.setVisible(true);
+        chat2Btn.setVisible(false);
+        chatResetBtn.setVisible(false);
+
+        portal.sendChatToFrame("reset");
+    }
+
+    public void showChatBtn(final String text) {
+        if (text.startsWith("He")) {
+            chat2Btn.setVisible("He told me enough! He told me you killed him!".equals(text));
+
+        } else if (text.startsWith("No")) {
+            chatResetBtn.setVisible(true);
+        }
     }
 
     @UiHandler("homeLink")

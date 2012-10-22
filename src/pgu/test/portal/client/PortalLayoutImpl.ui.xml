@@ -11,6 +11,9 @@
         .alert {
             margin-top: 25px;
         }
+        .disclosure {
+            margin-top: 50px;
+        }
     </ui:style>
 
     <g:HTMLPanel addStyleNames="container-fluid">
@@ -19,6 +22,14 @@
                 <b:NavLink ui:field="homeLink" text="Home" />
                 <g:FlowPanel ui:field="menu" />
                 <g:HTMLPanel ui:field="alert" addStyleNames="{style.alert}" />
+                <g:DisclosurePanel addStyleNames="{style.disclosure}" ui:field="chatDisclosure" animationEnabled="true">
+                    <g:VerticalPanel>
+                        <g:Image url="img/vader.png"></g:Image>
+                        <b:Button ui:field="chat1Btn" text="Obi-Wan never told you what happened to your father." />
+                        <b:Button ui:field="chat2Btn" text="No. I am your father." />
+                        <b:Button ui:field="chatResetBtn" text="Reset" />
+                    </g:VerticalPanel>
+                </g:DisclosurePanel>
             </g:HTMLPanel>
             <g:HTMLPanel ui:field="rightPanel" addStyleNames="span10">
                 <div class="row-fluid">
