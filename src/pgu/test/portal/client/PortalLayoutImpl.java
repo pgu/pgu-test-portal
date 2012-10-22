@@ -51,7 +51,7 @@ public class PortalLayoutImpl extends Composite {
         this.portal = portal;
         frame.getElement().setId("portal_frame");
 
-        showHome();
+        //        showHome();
 
         frame.addLoadHandler(new LoadHandler() {
 

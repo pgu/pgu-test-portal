@@ -31,8 +31,6 @@ public class Pgu_test_portal implements EntryPoint {
         portalLayout = new PortalLayoutImpl(this);
         RootPanel.get().add(portalLayout);
 
-        fetchWidgetsOnLoad();
-
         History.addValueChangeHandler(new ValueChangeHandler<String>() {
 
             @Override
@@ -80,7 +78,10 @@ public class Pgu_test_portal implements EntryPoint {
 
         listenToMessage(functionToApplyOnFrameResponse(portalLayout));
 
+        fetchWidgetsOnLoad();
     }
+
+    private int counterWidgetToLoad = 0;
 
     private void fetchWidgetsOnLoad() {
         greetingService.getWidgets(new AsyncCallbackApp<LinkedHashMap<String, String>>() {
@@ -89,6 +90,7 @@ public class Pgu_test_portal implements EntryPoint {
             public void onSuccess(final LinkedHashMap<String, String> result) {
 
                 widgetId2url.putAll(result);
+                counterWidgetToLoad = result.size();
 
                 for (final Entry<String, String> e : result.entrySet()) {
                     final String widgetId = e.getKey();
@@ -98,6 +100,13 @@ public class Pgu_test_portal implements EntryPoint {
                 }
 
             }
+
+            @Override
+            public void onFailure(final Throwable caught) {
+                counterWidgetToLoad = 0;
+                super.onFailure(caught);
+            }
+
 
         });
     }
@@ -109,6 +118,22 @@ public class Pgu_test_portal implements EntryPoint {
             @Override
             public void onSuccess(final String jsonMenu) {
                 translateJsonMenuAndSendToView(widgetId, widgetUrl, jsonMenu, portalLayout);
+
+                counterWidgetToLoad--;
+
+                if (counterWidgetToLoad == 0) {
+                    History.fireCurrentHistoryState();
+                }
+            }
+
+            @Override
+            public void onFailure(final Throwable caught) {
+                counterWidgetToLoad--;
+                if (counterWidgetToLoad == 0) {
+                    History.fireCurrentHistoryState();
+                }
+
+                super.onFailure(caught);
             }
 
         });
